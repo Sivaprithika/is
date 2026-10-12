@@ -1,0 +1,76 @@
+CREATE DATABASE IF NOT EXISTS dvwa;
+
+CREATE USER IF NOT EXISTS 'dvwa'@'localhost'
+IDENTIFIED BY 'p@ssw0rd';
+
+GRANT ALL PRIVILEGES ON *.* TO 'dvwa'@'localhost';
+
+CREATE USER IF NOT EXISTS 'dvwa'@'127.0.0.1'
+IDENTIFIED BY 'p@ssw0rd';
+
+GRANT ALL PRIVILEGES ON *.* TO 'dvwa'@'127.0.0.1';
+
+FLUSH PRIVILEGES;
+Experiment: Installing and Accessing DVWA using XAMPP
+Step-by-step procedure
+
+Follow these steps in order whenever you need to open DVWA on your Windows laptop.
+
+Step 1: Download DVWA
+
+Download the DVWA ZIP file from the official 
+Damn Vulnerable Web Application
+ repository.
+
+Website: 
+DVWA on GitHub
+
+Step 2: Extract the ZIP file
+
+Right-click the downloaded ZIP file and select Extract All. Locate the extracted DVWA-master folder.
+
+Step 3: Install XAMPP and place DVWA
+
+Install XAMPP with Apache, PHP, and MySQL/MariaDB components. Copy the actual DVWA application folder into:
+
+C:\xampp\htdocs\DVWA
+
+Check that index.php, setup.php, and login.php are directly inside this folder.
+
+Step 4: Start XAMPP services
+
+Open XAMPP Control Panel and click Start beside Apache and MySQL. Both should be running.
+
+Step 5: Open phpMyAdmin
+
+Visit 
+http://localhost/phpmyadmin/
+ in your browser. Use the administrative account to configure the DVWA database.
+
+Step 6: Configure the database
+
+In phpMyAdmin, create the dvwa database and configure its database user and permissions. The configuration file is located at:
+
+C:\xampp\htdocs\DVWA\config\config.inc.php
+
+The default local database settings commonly use database dvwa, user dvwa, and password p@ssw0rd.
+
+Step 7: Open the setup page
+
+Visit:
+
+http://localhost/DVWA/setup.php
+
+Check the configuration status. When the database connection is correct, click Create / Reset Database to initialize DVWA.
+
+Step 8: Log in to DVWA
+
+Open 
+http://localhost/DVWA/login.php
+.
+
+Default credentials:
+
+Username: admin
+
+Password: password

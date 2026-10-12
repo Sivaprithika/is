@@ -1,0 +1,195 @@
+
+import random
+
+# ----------------------------------------
+# EXPERIMENT 9: ELLIPTIC CURVE CRYPTOGRAPHY
+# ----------------------------------------
+
+# Curve parameters
+P = 17
+A = 2
+B = 2
+G = (5, 1)
+N = 19
+
+
+# ----------------------------------------
+# MODULE 1: GENERATE AFFINE POINTS
+# ----------------------------------------
+def generate_points(p, a, b):
+    points = []
+
+    for x in range(p):
+        rhs = (x**3 + a*x + b) % p
+
+        for y in range(p):
+            if (y*y) % p == rhs:
+                points.append((x, y))
+
+    return points
+
+
+# ----------------------------------------
+# MODULE 2: POINT ADDITION AND DOUBLING
+# ----------------------------------------
+def point_add(P1, P2, a, p):
+    if P1 is None:
+        return P2
+
+    if P2 is None:
+        return P1
+
+    x1, y1 = P1
+    x2, y2 = P2
+
+    # Point plus its inverse
+    if x1 == x2 and (y1 + y2) % p == 0:
+        return None
+
+    # Point doubling
+    if P1 == P2:
+        if y1 % p == 0:
+            return None
+
+        numerator = 3*x1**2 + a
+        denominator = 2*y1
+
+    # Ordinary point addition
+    else:
+        numerator = y2 - y1
+        denominator = x2 - x1
+
+    # Modular inverse
+    lam = (
+        numerator * pow(denominator % p, -1, p)
+    ) % p
+
+    x3 = (lam**2 - x1 - x2) % p
+    y3 = (lam * (x1 - x3) - y1) % p
+
+    return (x3, y3)
+
+
+# ----------------------------------------
+# MODULE 3: SCALAR MULTIPLICATION
+# ----------------------------------------
+def scalar_multiply(k, point, a, p):
+    result = None
+    q = point
+
+    while k > 0:
+        if k % 2 == 1:
+            result = point_add(result, q, a, p)
+
+        q = point_add(q, q, a, p)
+        k //= 2
+
+    return result
+
+
+# ----------------------------------------
+# MODULE 4: ENCRYPTION
+# ----------------------------------------
+def encrypt(pm, q):
+    if pm not in generate_points(P, A, B):
+        raise ValueError("Plaintext point is not on the curve")
+
+    while True:
+        # Choose random integer k
+        k = random.randint(1, N - 1)
+
+        # C1 = kG
+        C1 = scalar_multiply(k, G, A, P)
+
+        # S = kQ
+        S = scalar_multiply(k, q, A, P)
+
+        # C2 = Pm + S
+        C2 = point_add(pm, S, A, P)
+
+        # Retry if a required point is infinity
+        if C1 is not None and S is not None and C2 is not None:
+            return C1, C2
+
+
+# ----------------------------------------
+# MODULE 5: DECRYPTION
+# ----------------------------------------
+def decrypt(cipher, d):
+    C1, C2 = cipher
+
+    # S = dC1
+    S = scalar_multiply(d, C1, A, P)
+
+    # Handle point at infinity
+    if S is None:
+        return C2
+
+    # Negative of S
+    neg_S = (S[0], (-S[1]) % P)
+
+    # Pm = C2 - S
+    Pm = point_add(C2, neg_S, A, P)
+
+    return Pm
+
+
+# ----------------------------------------
+# MAIN PROGRAM
+# ----------------------------------------
+print("ELLIPTIC CURVE CRYPTOGRAPHY")
+print("---------------------------")
+print("Curve: y^2 = (x^3 + 2x + 2) mod 17")
+print("Base Point G =", G)
+print("Order N =", N)
+print()
+
+# Module 1
+points = generate_points(P, A, B)
+print("MODULE 1: GENERATE AFFINE POINTS")
+print("Number of affine points:", len(points))
+print("Points:", points)
+print()
+
+# Module 2
+print("MODULE 2: POINT ADDITION")
+print("G + G =", point_add(G, G, A, P))
+print()
+
+# Module 3
+print("MODULE 3: SCALAR MULTIPLICATION")
+for k in range(1, 4):
+    print(k, "* G =", scalar_multiply(k, G, A, P))
+print("19 * G =", scalar_multiply(19, G, A, P))
+print()
+
+# Generate receiver's key pair
+d = 7
+Q = scalar_multiply(d, G, A, P)
+
+print("MODULE 4: ENCRYPTION")
+print("Private key =", d)
+print("Public key =", Q)
+print()
+
+# Encrypt and decrypt three plaintext points
+messages = points[:3]
+
+print("MODULE 5: ENCRYPTION AND DECRYPTION")
+
+for i, pm in enumerate(messages, 1):
+    print("\nMESSAGE", i)
+    print("Plaintext =", pm)
+
+    cipher = encrypt(pm, Q)
+
+    print("C1 =", cipher[0])
+    print("C2 =", cipher[1])
+
+    recovered = decrypt(cipher, d)
+    print("Decrypted =", recovered)
+
+    if recovered == pm:
+        print("Result: SUCCESS")
+    else:
+        print("Result: FAILURE")

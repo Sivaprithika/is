@@ -1,0 +1,132 @@
+$env:Path = "C:\Program Files\OpenSSL-Win64\bin;$env:Path"
+openssl version
+
+Question 1: Create a plaintext file
+1)"SIVA PRITHIKA M V - Reg No: YOUR_REGISTER_NUMBER" | Set-Content -Encoding ascii plain.txt
+2)Get-Content plain.txt
+
+Question 2: Encrypt using AES-128-CBC
+1)openssl enc -aes-128-cbc -e -in plain.txt -out cipher.bin -k "password" -nosalt
+
+Question 3: Display the encrypted contents
+1)Format-Hex cipher.bin | Select-Object -First 5
+
+Question 4: Decrypt the file
+1)openssl enc -aes-128-cbc -d -in cipher.bin -out pt.txt -k "password" -nosalt
+
+Question 5: Check whether decryption succeeded
+1)Get-Content pt.txt
+2)fc.exe /b plain.txt pt.txt
+
+Question 6: Compare AES modes
+Mode	Key point
+ECB	Encrypts each block independently; reveals repeated patterns
+CBC	Each block depends on the previous ciphertext block
+CFB	Uses a block cipher in a feedback mode
+OFB	Generates a keystream using output feedback
+CTR	Uses a counter to generate a keystream
+ 
+openssl enc -aes-128-ecb -e -in plain.txt -out cipher_ecb.bin -k "password" -nosalt
+openssl enc -aes-128-cfb -e -in plain.txt -out cipher_cfb.bin -k "password" -nosalt
+openssl enc -aes-128-ofb -e -in plain.txt -out cipher_ofb.bin -k "password" -nosalt
+openssl enc -aes-128-ctr -e -in plain.txt -out cipher_ctr.bin -k "password" -nosalt
+
+Format-Hex cipher_ecb.bin | Select-Object -First 3
+Format-Hex cipher_cfb.bin | Select-Object -First 3
+Format-Hex cipher_ofb.bin | Select-Object -First 3
+Format-Hex cipher_ctr.bin | Select-Object -First 3
+z
+Question 7: Observe the avalanche effect
+1)Copy-Item plain.txt plain_mod.txt
+2)notepad plain_mod.txt
+
+In Notepad, change just one character, save, and close it.
+
+3)openssl enc -aes-128-cbc -e -in plain_mod.txt -out cipher_mod.bin -k "password" -nosalt
+4)fc.exe /b cipher.bin cipher_mod.bin
+
+Question 8: Use AES-256 with PBKDF2
+1)openssl enc -aes-256-cbc -e -in plain.txt -out cipher_pbkdf2.bin -k "password" -pbkdf2 -iter 100000
+2)Format-Hex cipher_pbkdf2.bin | Select-Object -First 3
+
+Question 9: Generate RSA keys
+1)openssl genrsa -out pvtkey.pem 2048
+2)openssl rsa -pubout -in pvtkey.pem -out pubkey.pem
+
+Files created:
+- pvtkey.pem — private key; keep it secret.
+- pubkey.pem — public key; can be shared.
+
+Question 10: Display the private key details
+1)openssl rsa -text -in pvtkey.pem -noout
+
+Question 11: Encrypt using the public key
+openssl pkeyutl -encrypt -in plain.txt -pubin -inkey pubkey.pem -out c1.bin
+
+Question 12: Display the encrypted file
+Format-Hex c1.bin | Select-Object -First 5
+
+
+Question 13: Decrypt using the private key
+openssl pkeyutl -decrypt -in c1.bin -inkey pvtkey.pem -out dec1.txt
+
+
+Question 14: Compare the recovered plaintext
+1)Get-Content dec1.txt
+2)fc.exe /b plain.txt dec1.txt
+
+Question 15: Generate a 4096-bit RSA key
+Measure-Command { openssl genrsa -out pvtkey4096.pem 4096 }
+ 	
+Question 16: Test RSA's size limitation
+$bytes = New-Object byte[] 300
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+[System.IO.File]::WriteAllBytes("$PWD\largefile.bin", $bytes)
+$rng.Dispose()  
+(Get-Item largefile.bin).Length
+
+Question 17: Generate an MD5 hash
+openssl dgst -md5 plain.txt
+
+Question 18: Generate a SHA-256 hash
+openssl dgst -sha256 plain.txt
+
+
+Question 19: Generate a SHA-512 hash
+openssl dgst -sha512 plain.txt
+
+
+Question 20: Generate HMAC-SHA256
+openssl dgst -sha256 -hmac "sharedsecret" plain.txt
+
+Question 21: Hash the modified file
+openssl dgst -sha256 plain_mod.txt
+
+Question 22: Sign the original file using SHA-1
+openssl dgst -sha1 -sign pvtkey.pem -out s.bin plain.txt
+
+
+Question 23: Verify the signature
+openssl dgst -sha1 -verify pubkey.pem -signature s.bin plain.txt
+
+Question 24: Sign and verify using SHA-256
+1)openssl dgst -sha256 -sign pvtkey.pem -out s256.bin plain.txt
+2)openssl dgst -sha256 -verify pubkey.pem -signature s256.bin plain.txt
+
+Question 25: Verify against a modified message
+openssl dgst -sha256 -verify pubkey.pem -signature s256.bin plain_mod.txt
+
+Question 26: Create a self-signed certificate
+openssl req -x509 -new -key pvtkey.pem -out cert.pem -days 365 -subj "/CN=SIVA PRITHIKA M V/O=Thiagarajar College of Engineering"
+
+Question 27: Display certificate details
+openssl x509 -in cert.pem -text -noout
+
+Question 28: Generate a CSR
+openssl req -new -key pvtkey.pem -out request.csr -subj "/CN=SIVA PRITHIKA M V/O=Thiagarajar College of Engineering"
+openssl req -in request.csr -text -noout
+
+Question 29: Compare AES and RSA performance
+1)openssl speed -seconds 3 aes-128-cbc rsa2048
+2)openssl speed aes-128-cbc rsa2048

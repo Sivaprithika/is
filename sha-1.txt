@@ -1,0 +1,124 @@
+
+# EXPERIMENT 10: IMPLEMENTATION OF ONE STEP OF SHA-1
+
+# MODULE 1: MESSAGE WORD GENERATION
+def chars_to_hex_word(four_chars):
+    if four_chars is None or len(four_chars) != 4:
+        raise ValueError("Exactly 4 characters are required")
+
+    hex_word = ""
+    for ch in four_chars:
+        hex_word += format(ord(ch) & 0xFF, "02X")
+
+    return int(hex_word, 16)
+
+
+# MODULE 2: BOOLEAN FUNCTION
+def boolean_function(choice, B, C, D):
+    if choice == 0x1:
+        # Choose function
+        return ((B & C) ^ ((~B) & D)) & 0xFFFFFFFF
+
+    elif choice == 0x2:
+        # Parity function
+        return (B ^ C ^ D) & 0xFFFFFFFF
+
+    elif choice == 0x3:
+        # Majority function
+        return ((B & C) ^ (B & D) ^ (C & D)) & 0xFFFFFFFF
+
+    elif choice == 0x4:
+        # Parity function
+        return (B ^ C ^ D) & 0xFFFFFFFF
+
+    else:
+        raise ValueError("Choice must be 0x1, 0x2, 0x3 or 0x4")
+
+
+# MODULE 3: CIRCULAR LEFT ROTATION
+def left_rotate(x, n):
+    n = n & 0x1F
+    x = x & 0xFFFFFFFF
+
+    if n == 0:
+        return x
+
+    return ((x << n) | (x >> (32 - n))) & 0xFFFFFFFF
+
+
+# MODULE 4: ADDITION MODULO 2^32
+def add_mod_32(*values):
+    total = 0
+
+    for value in values:
+        total += value & 0xFFFFFFFF
+
+    return total & 0xFFFFFFFF
+
+
+# MODULE 5: ONE COMPLETE SHA-1 STEP
+def execute_step(A, B, C, D, E, W, K, fn_choice):
+    # Calculate Boolean function
+    f = boolean_function(fn_choice, B, C, D)
+
+    # Rotate A left by 5 bits
+    rot_A = left_rotate(A, 0x5)
+
+    # Calculate new A
+    new_A = add_mod_32(rot_A, f, E, W, K)
+
+    # Update remaining registers
+    new_B = A
+    new_C = left_rotate(B, 0x1E)
+    new_D = C
+    new_E = D
+
+    return new_A, new_B, new_C, new_D, new_E
+
+
+# MODULE 6: TESTING THE FUNCTIONS
+print("SHA-1 FUNCTION TESTING")
+print("----------------------")
+
+print("1. Message Word:")
+print(f"W = {chars_to_hex_word('abcd'):08X}")
+
+print("\n2. Boolean Function:")
+f = boolean_function(
+    0x1, 0x55678899, 0x00AABBCC, 0xDDEEFF01
+)
+print(f"f = {f:08X}")
+
+print("\n3. Circular Left Rotation:")
+print(f"Result = {left_rotate(0x11223344, 0x5):08X}")
+
+print("\n4. Addition Modulo 2^32:")
+print(f"Result = {add_mod_32(0xFFFFFFFF, 0xFFFFFFFF, 0x1):08X}")
+
+
+# MODULE 7: EXECUTE ONE COMPLETE SHA-1 STEP
+print("\nONE COMPLETE SHA-1 STEP")
+print("-----------------------")
+
+# Initial register values
+A = 0x67452301
+B = 0xEFCDAB89
+C = 0x98BADCFE
+D = 0x10325476
+E = 0xC3D2E1F0
+
+# Message word and round constant
+W = chars_to_hex_word("abcd")
+K = 0x5A827999
+
+# Execute one step using the first round's Boolean function
+A_new, B_new, C_new, D_new, E_new = execute_step(
+    A, B, C, D, E, W, K, 0x1
+)
+
+# Display updated registers
+print("A' =", f"{A_new:08X}")
+print("B' =", f"{B_new:08X}")
+print("C' =", f"{C_new:08X}")
+print("D' =", f"{D_new:08X}")
+print("E' =", f"{E_new:08X}")
